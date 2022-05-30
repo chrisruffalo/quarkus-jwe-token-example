@@ -1,0 +1,5 @@
+# no mvn/build files
+target
+
+# ide files
+.idea

@@ -1,0 +1,98 @@
+package io.github.chrisruffalo.jwe.jose;
+
+
+import io.netty.handler.codec.http.cookie.ServerCookieDecoder;
+import io.quarkus.security.identity.IdentityProviderManager;
+import io.quarkus.security.identity.SecurityIdentity;
+import io.quarkus.security.identity.request.TokenAuthenticationRequest;
+import io.quarkus.smallrye.jwt.runtime.auth.JWTAuthMechanism;
+import io.quarkus.smallrye.jwt.runtime.auth.JsonWebTokenCredential;
+import io.smallrye.jwt.auth.AbstractBearerTokenExtractor;
+import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
+import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.unchecked.Unchecked;
+import io.vertx.core.http.Cookie;
+import io.vertx.core.http.HttpHeaders;
+import io.vertx.ext.web.RoutingContext;
+import org.jboss.logging.Logger;
+import org.jose4j.jwt.JwtClaims;
+import org.jose4j.jwt.consumer.JwtConsumer;
+import org.jose4j.jwt.consumer.JwtConsumerBuilder;
+
+import javax.annotation.Priority;
+import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.inject.Alternative;
+import javax.inject.Inject;
+import java.util.Optional;
+import java.util.Set;
+
+@ApplicationScoped
+@Alternative
+@Priority(1)
+public class CustomJWTAuthMechanism extends JWTAuthMechanism {
+
+    @Inject
+    Logger logger;
+
+    @Inject
+    KeyResolver keyResolver;
+    @Inject
+    JWTAuthContextInfo authContextInfo;
+
+    @Override
+    public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
+        String jwtToken = new VertxBearerTokenExtractor(authContextInfo, context).getBearerToken();
+
+        if (jwtToken != null) {
+            return Uni.createFrom().item(jwtToken)
+                .onItem().transform(Unchecked.function(token -> {
+                    final JwtConsumer consumer = new JwtConsumerBuilder()
+                        .setAllowedClockSkewInSeconds(5)
+                        .setRequireExpirationTime()
+                        .setRequireSubject()
+                        .setRequireJwtId()
+                        .setRequireIssuedAt()
+                        .setDecryptionKeyResolver(keyResolver)
+                        .setVerificationKeyResolver(keyResolver)
+                        .build();
+
+                    return consumer.processToClaims(token);
+                }))
+                .onFailure(failure -> false)
+                .recoverWithItem(new JwtClaims())
+                .onItem().transform(JwtClaims::toJson)
+                .onItem().transformToUni(jsonClaims -> identityProviderManager.authenticate(new TokenAuthenticationRequest(new JsonWebTokenCredential(jsonClaims))));
+        }
+        return Uni.createFrom().optional(Optional.empty());
+    }
+
+    private static class VertxBearerTokenExtractor extends AbstractBearerTokenExtractor {
+        private final RoutingContext httpExchange;
+
+        VertxBearerTokenExtractor(JWTAuthContextInfo authContextInfo, RoutingContext exchange) {
+            super(authContextInfo);
+            this.httpExchange = exchange;
+        }
+
+        @Override
+        protected String getHeaderValue(String headerName) {
+            return httpExchange.request().headers().get(headerName);
+        }
+
+        @Override
+        protected String getCookieValue(String cookieName) {
+            String cookieHeader = httpExchange.request().headers().get(HttpHeaders.COOKIE);
+
+            if (cookieHeader != null && httpExchange.cookieCount() == 0) {
+                Set<io.netty.handler.codec.http.cookie.Cookie> nettyCookies = ServerCookieDecoder.STRICT.decode(cookieHeader);
+                for (io.netty.handler.codec.http.cookie.Cookie cookie : nettyCookies) {
+                    if (cookie.name().equals(cookieName)) {
+                        return cookie.value();
+                    }
+                }
+            }
+            Cookie cookie = httpExchange.getCookie(cookieName);
+            return cookie != null ? cookie.getValue() : null;
+        }
+    }
+}
