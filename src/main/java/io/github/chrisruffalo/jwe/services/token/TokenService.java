@@ -30,7 +30,7 @@ import java.util.Calendar;
  * This creates a token for a given subject (machine/service/human) to interact with a consumer (like
  * the submission service). The relevant keys are created and stored for reuse (until being revoked).
  */
-@Path("/token")
+@Path("/issuer/token")
 public class TokenService {
 
     private static final String ISSUER = "token-service";
@@ -78,27 +78,24 @@ public class TokenService {
             claims.setAudience(consumerName);
             claims.setStringListClaim("groups", "Read", "Write");
 
-            // the signing key represents one of the keys, routinely rotated, that would be used by
-            // the issuing service. there is a pool of keys just to show how the key id can be resolved
-            // at decryption time
-            final StoredKeyPair signingPair = subject.getFirstActiveKeyPair().orElseGet(() -> {
-                StoredKeyPair pair = keyPairRegistry.createNewKeyPair();
-                pair.active = true;
-                subject.pairs.add(pair);
-                return pair;
-            });
+            // each token is signed by its own key. this means that a key can be revoked/deactivated which
+            // will make it impossible to validate the key. this results in cryptographically revoked keys
+            // rather than a logical revoke which could be error-prone.
+            final StoredKeyPair signingPair = keyPairRegistry.createNewKeyPair();
+            signingPair.active = true;
+            subject.pairs.add(signingPair);
 
             // create signed payload for jwe
             final JsonWebSignature toSign = new JsonWebSignature();
             toSign.setPayload(claims.toJson());
             toSign.setKey(keyPairRegistry.fromStoredKeyPair(signingPair).orElseThrow(StoredKeyToKeyPairException::new).getPrivate());   // signed with the private key from the producer to ensure
-                                                                                          // that we can verify that it came from only the issuer
+                                                                                                                                        // that we can verify that it came from only the issuer
             toSign.setKeyIdHeaderValue(signingPair.jwk);
             toSign.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
             final String signedPayload = toSign.getCompactSerialization();
 
-            // get a new key, this key represents the public key from the consuming service which should
-            // be a remote service but in this case it will be generated locally
+            // when it comes to the consuming public key we can choose an already active key. this allows the consumer
+            // to rotate keys while still being able to support decryption on its side.
             final StoredKeyPair consumerPair = consumer.getFirstActiveKeyPair().orElseGet(() -> {
                 StoredKeyPair pair = keyPairRegistry.createNewKeyPair();
                 pair.active = true;
