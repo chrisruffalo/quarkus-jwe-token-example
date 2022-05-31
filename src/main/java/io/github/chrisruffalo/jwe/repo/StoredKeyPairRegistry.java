@@ -1,20 +1,14 @@
 package io.github.chrisruffalo.jwe.repo;
 
+import io.github.chrisruffalo.jwe.keypairs.KeyPairHandler;
+import io.github.chrisruffalo.jwe.keypairs.KeyPairHandlerFactory;
 import io.github.chrisruffalo.jwe.model.KeyType;
 import io.github.chrisruffalo.jwe.model.StoredKeyPair;
 import org.jose4j.jwk.JsonWebKey;
-import org.jose4j.jwk.RsaJsonWebKey;
 
-import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
-import java.security.KeyFactory;
+import javax.inject.Inject;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
-import java.security.interfaces.RSAPublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.security.spec.X509EncodedKeySpec;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,40 +19,14 @@ import java.util.UUID;
 @ApplicationScoped
 public class StoredKeyPairRegistry {
 
-    private KeyPairGenerator generator;
-
-    private KeyFactory factory;
-
-    @PostConstruct
-    public void init() {
-        try {
-            generator = KeyPairGenerator.getInstance("RSA");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            factory = KeyFactory.getInstance("RSA");
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Optional<KeyPair> fromEncoded(final byte[] publicKey, final byte[] privateKey) {
-        try {
-            return Optional.of(new KeyPair(
-                factory.generatePublic(new X509EncodedKeySpec(publicKey)),
-                factory.generatePrivate(new PKCS8EncodedKeySpec(privateKey))
-            ));
-        } catch (InvalidKeySpecException e) {
-            return Optional.empty();
-        }
-    }
+    @Inject
+    KeyPairHandlerFactory handlerFactory;
 
     public Optional<KeyPair> fromStoredKeyPair(final StoredKeyPair storedKeyPair) {
         if (storedKeyPair == null) {
             return Optional.empty();
         }
-        return fromEncoded(storedKeyPair.publicKey, storedKeyPair.privateKey);
+        return handlerFactory.get(storedKeyPair.keyType).from(storedKeyPair.publicKey, storedKeyPair.privateKey);
     }
 
     public Optional<KeyPair> resolveKeyPair(final String kid) {
@@ -66,33 +34,52 @@ public class StoredKeyPairRegistry {
     }
 
     /**
-     * Create a new key pair and persist it. This does not use the static panache methods
+     * Create a new key pair of the default type and persist it. This does not use the static panache methods
      * on the StoredKeyPair because the jwk there is type-agnostic while here a generator
      * is created and a specific key implementation is chosen.
      *
      * @return newly persisted instance of {@link StoredKeyPair}
      */
     public StoredKeyPair createNewKeyPair() {
+        return createNewKeyPair(KeyType.DEFAULT);
+    }
+
+    /**
+     * Create a new key pair of the selected type and persist it. This does not use the static panache methods
+     * on the StoredKeyPair because the jwk there is type-agnostic while here a generator
+     * is created and a specific key implementation is chosen.
+     *
+     * @param type the type of key to create
+     * @return newly persisted instance of {@link StoredKeyPair}
+     */
+    public StoredKeyPair createNewKeyPair(KeyType type) {
+        // get the handler
+        final KeyPairHandler handler = handlerFactory.get(type);
+
         // create pair
-        final KeyPair pair = generator.generateKeyPair();
+        final KeyPair pair = handler.generate();
 
         // create key id
         final String keyId = UUID.randomUUID().toString();
 
-        // turn into jwk
-        final JsonWebKey webKey = new RsaJsonWebKey((RSAPublicKey)pair.getPublic());
-        webKey.setKeyId(keyId);
-
         // create entity object
-        StoredKeyPair serviceKeyPair = new StoredKeyPair();
-        serviceKeyPair.kid = webKey.getKeyId();
-        serviceKeyPair.jwk = webKey.toJson();
-        serviceKeyPair.keyType = KeyType.RSA; // default for now, want to branch this out into a factory
-                                              // so that the key created is dependent on type
-                                              // and it will also enable resolution and decryption/verification
-                                              // based on type
+        final StoredKeyPair serviceKeyPair = new StoredKeyPair();
+
+        // turn into jwk if a web key was returned from the creator
+        final Optional<JsonWebKey> webKey = handler.toWebKey(pair);
+        webKey.ifPresent(key -> {
+            key.setKeyId(keyId);
+            serviceKeyPair.kid = key.getKeyId();
+            serviceKeyPair.jwk = key.toJson();
+        });
+
+        // get key type and save encoded parts
+        serviceKeyPair.keyType = type;
         serviceKeyPair.privateKey = pair.getPrivate().getEncoded();
         serviceKeyPair.publicKey = pair.getPublic().getEncoded();
+
+        // set the (transient) original key pair for use without encoding/decoding within this context
+        serviceKeyPair.originalPair = pair;
 
         // persist new key pair
         serviceKeyPair.persist();

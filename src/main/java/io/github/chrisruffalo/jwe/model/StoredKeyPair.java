@@ -5,6 +5,8 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
 import javax.persistence.Entity;
 import javax.persistence.Lob;
+import javax.persistence.Transient;
+import java.security.KeyPair;
 import java.util.*;
 
 /**
@@ -57,6 +59,9 @@ public class StoredKeyPair extends PanacheEntity {
      */
     @Lob
     public byte[] publicKey;
+
+    @Transient
+    public transient KeyPair originalPair;
 
     public boolean isActive() {
         // check active status

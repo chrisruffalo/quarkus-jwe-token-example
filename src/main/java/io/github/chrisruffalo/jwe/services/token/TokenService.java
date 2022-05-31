@@ -1,7 +1,10 @@
 package io.github.chrisruffalo.jwe.services.token;
 
 import io.github.chrisruffalo.jwe.exception.StoredKeyToKeyPairException;
+import io.github.chrisruffalo.jwe.keypairs.KeyPairHandler;
+import io.github.chrisruffalo.jwe.keypairs.KeyPairHandlerFactory;
 import io.github.chrisruffalo.jwe.model.Consumer;
+import io.github.chrisruffalo.jwe.model.KeyType;
 import io.github.chrisruffalo.jwe.model.StoredKeyPair;
 import io.github.chrisruffalo.jwe.model.Subject;
 import io.github.chrisruffalo.jwe.repo.StoredKeyPairRegistry;
@@ -18,10 +21,7 @@ import org.jose4j.lang.JoseException;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Calendar;
@@ -42,16 +42,34 @@ public class TokenService {
     Logger logger;
 
     @Inject
+    KeyPairHandlerFactory keyPairHandlerFactory;
+
+    @Inject
     StoredKeyPairRegistry keyPairRegistry;
+
+    private KeyType calcluateKeyType(final String keyTypeString) {
+        KeyType type = KeyType.DEFAULT;
+        if (keyTypeString != null && !keyTypeString.isEmpty()) {
+            try {
+                type = KeyType.valueOf(keyTypeString.toUpperCase());
+            } catch (IllegalArgumentException iex) {
+                // no-op, illegal type
+            }
+        }
+        return type;
+    }
 
     @Transactional
     @Path("/{consumer}/{subject}")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    public Response generate(@PathParam("consumer") final String consumerName, @PathParam("subject") final String subjectName) {
+    public Response generate(@PathParam("consumer") final String consumerName, @PathParam("subject") final String subjectName, @QueryParam("keyType") @DefaultValue("RSA") final String keyType) {
         if (subjectName == null || subjectName.isEmpty()) {
             return Response.serverError().build();
         }
+
+        final KeyType type = calcluateKeyType(keyType);
+        final KeyPairHandler handler = keyPairHandlerFactory.get(type);
 
         // get existing subject or create it if it does not exist
         final Subject subject = Subject.findByName(subjectName).orElseGet(() -> {
@@ -84,7 +102,7 @@ public class TokenService {
             // each token is signed by its own key. this means that a key can be revoked/deactivated which
             // will make it impossible to validate the key. this results in cryptographically revoked keys
             // rather than a logical revoke which could be error-prone.
-            final StoredKeyPair signingPair = keyPairRegistry.createNewKeyPair();
+            final StoredKeyPair signingPair = keyPairRegistry.createNewKeyPair(type);
             signingPair.active = true;
             signingPair.expires = future.getTime(); // the key expires when the token expires too
             // set expiration
@@ -93,16 +111,13 @@ public class TokenService {
             // create signed payload for jwe
             final JsonWebSignature toSign = new JsonWebSignature();
             toSign.setPayload(claims.toJson());
-            toSign.setKey(keyPairRegistry.fromStoredKeyPair(signingPair).orElseThrow(StoredKeyToKeyPairException::new).getPrivate());   // signed with the private key from the producer to ensure
-                                                                                                                                        // that we can verify that it came from only the issuer
-            toSign.setKeyIdHeaderValue(signingPair.jwk);
-            toSign.setAlgorithmHeaderValue(AlgorithmIdentifiers.RSA_USING_SHA256);
+            handler.configureSignature(toSign, signingPair);
             final String signedPayload = toSign.getCompactSerialization();
 
             // when it comes to the consuming public key we can choose an already active key. this allows the consumer
             // to rotate keys while still being able to support decryption on its side.
             final StoredKeyPair consumerPair = consumer.getFirstActiveKeyPair().orElseGet(() -> {
-                StoredKeyPair pair = keyPairRegistry.createNewKeyPair();
+                StoredKeyPair pair = keyPairRegistry.createNewKeyPair(type);
                 pair.active = true;
                 consumer.pairs.add(pair);
                 return pair;
@@ -114,12 +129,9 @@ public class TokenService {
             // encrypted tokens to simplify management on the client side
             toEncrypt.setHeader("exp", claims.getExpirationTime().getValueInMillis());
             toEncrypt.setHeader("sub", claims.getSubject());
-            toEncrypt.setKey(keyPairRegistry.fromStoredKeyPair(consumerPair).orElseThrow(StoredKeyToKeyPairException::new).getPublic()); // encrypted by the consumer's public key so only it can decrypt
-            toEncrypt.setKeyIdHeaderValue(consumerPair.kid);
             toEncrypt.setContentTypeHeaderValue("JWT");
             toEncrypt.setPayload(signedPayload);
-            toEncrypt.setAlgorithmHeaderValue(KeyManagementAlgorithmIdentifiers.RSA_OAEP_256);
-            toEncrypt.setEncryptionMethodHeaderParameter(ContentEncryptionAlgorithmIdentifiers.AES_256_CBC_HMAC_SHA_512);
+            handler.configureEncryption(toEncrypt, consumerPair);
 
             // return encrypted object
             final String encodedToken = toEncrypt.getCompactSerialization();
