@@ -25,8 +25,6 @@ import java.util.UUID;
 @ApplicationScoped
 public class StoredKeyPairRegistry {
 
-    public static int EXPIRES_MINUTES = 10;
-
     private KeyPairGenerator generator;
 
     private KeyFactory factory;
@@ -64,7 +62,7 @@ public class StoredKeyPairRegistry {
     }
 
     public Optional<KeyPair> resolveKeyPair(final String kid) {
-        return StoredKeyPair.getKeyPairByKid(kid).flatMap(this::fromStoredKeyPair);
+        return StoredKeyPair.getKeyPairByKid(kid).filter(StoredKeyPair::isActive).flatMap(this::fromStoredKeyPair);
     }
 
     /**
@@ -78,10 +76,6 @@ public class StoredKeyPairRegistry {
         // create pair
         final KeyPair pair = generator.generateKeyPair();
 
-        // set expiration
-        final Calendar exp = Calendar.getInstance();
-        exp.add(Calendar.MINUTE, EXPIRES_MINUTES);
-
         // create key id
         final String keyId = UUID.randomUUID().toString();
 
@@ -93,7 +87,6 @@ public class StoredKeyPairRegistry {
         StoredKeyPair serviceKeyPair = new StoredKeyPair();
         serviceKeyPair.kid = webKey.getKeyId();
         serviceKeyPair.jwk = webKey.toJson();
-        serviceKeyPair.expires = exp.getTime();
         serviceKeyPair.privateKey = pair.getPrivate().getEncoded();
         serviceKeyPair.publicKey = pair.getPublic().getEncoded();
 

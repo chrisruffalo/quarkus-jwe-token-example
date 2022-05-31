@@ -33,6 +33,9 @@ import java.util.Calendar;
 @Path("/issuer/token")
 public class TokenService {
 
+    private static final int EXPIRE_TIME_UNIT = Calendar.MINUTE;
+    private static final int EXPIRE_TIME_AMOUNT = 10;
+
     private static final String ISSUER = "token-service";
 
     @Inject
@@ -67,7 +70,7 @@ public class TokenService {
 
         try {
             final Calendar future = Calendar.getInstance();
-            future.add(Calendar.YEAR, 1);
+            future.add(EXPIRE_TIME_UNIT, EXPIRE_TIME_AMOUNT);
 
             final JwtClaims claims = new JwtClaims();
             claims.setGeneratedJwtId();
@@ -83,6 +86,8 @@ public class TokenService {
             // rather than a logical revoke which could be error-prone.
             final StoredKeyPair signingPair = keyPairRegistry.createNewKeyPair();
             signingPair.active = true;
+            signingPair.expires = future.getTime(); // the key expires when the token expires too
+            // set expiration
             subject.pairs.add(signingPair);
 
             // create signed payload for jwe

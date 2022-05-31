@@ -5,6 +5,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
 import javax.persistence.Entity;
 import javax.persistence.Lob;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
 
@@ -27,6 +28,10 @@ public class StoredKeyPair extends PanacheEntity {
      */
     public boolean active;
 
+    /**
+     * When a key expires it should be deactivated by a periodic task
+     * which will automatically revoke all keys.
+     */
     public Date expires;
 
     /**
@@ -41,6 +46,18 @@ public class StoredKeyPair extends PanacheEntity {
 
     @Lob
     public byte[] publicKey;
+
+    public boolean isActive() {
+        // check active status
+        if (!active) {
+            return false;
+        }
+        // check expiration
+        if (expires != null) {
+            return Calendar.getInstance().before(expires);
+        }
+        return true;
+    }
 
     public static Optional<StoredKeyPair> getKeyPairByKid(final String kid) {
         return find("kid", kid).firstResultOptional();
