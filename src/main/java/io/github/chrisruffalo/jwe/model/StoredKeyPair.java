@@ -54,7 +54,9 @@ public class StoredKeyPair extends PanacheEntity {
         }
         // check expiration
         if (expires != null) {
-            return Calendar.getInstance().before(expires);
+            final Calendar expireCalendar = Calendar.getInstance();
+            expireCalendar.setTime(expires);
+            return Calendar.getInstance().before(expireCalendar);
         }
         return true;
     }
