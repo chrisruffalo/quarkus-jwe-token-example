@@ -16,9 +16,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * An endpoint that provides consumers with the ability to verify the signature of a subject

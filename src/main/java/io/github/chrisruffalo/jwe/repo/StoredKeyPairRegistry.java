@@ -1,5 +1,6 @@
 package io.github.chrisruffalo.jwe.repo;
 
+import io.github.chrisruffalo.jwe.model.KeyType;
 import io.github.chrisruffalo.jwe.model.StoredKeyPair;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -14,7 +15,6 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.Calendar;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -87,6 +87,10 @@ public class StoredKeyPairRegistry {
         StoredKeyPair serviceKeyPair = new StoredKeyPair();
         serviceKeyPair.kid = webKey.getKeyId();
         serviceKeyPair.jwk = webKey.toJson();
+        serviceKeyPair.keyType = KeyType.RSA; // default for now, want to branch this out into a factory
+                                              // so that the key created is dependent on type
+                                              // and it will also enable resolution and decryption/verification
+                                              // based on type
         serviceKeyPair.privateKey = pair.getPrivate().getEncoded();
         serviceKeyPair.publicKey = pair.getPublic().getEncoded();
 

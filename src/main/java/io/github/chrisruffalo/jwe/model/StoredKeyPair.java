@@ -5,9 +5,7 @@ import io.quarkus.hibernate.orm.panache.PanacheEntity;
 
 import javax.persistence.Entity;
 import javax.persistence.Lob;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Stores a keypair in a way that it can be used by the application without
@@ -29,6 +27,13 @@ public class StoredKeyPair extends PanacheEntity {
     public boolean active;
 
     /**
+     * This is a jumping-off point for supporting multiple key types, right now
+     * only RSA is used but this will be used to determine how to construct
+     * the key from this one.
+     */
+    public KeyType keyType;
+
+    /**
      * When a key expires it should be deactivated by a periodic task
      * which will automatically revoke all keys.
      */
@@ -41,9 +46,15 @@ public class StoredKeyPair extends PanacheEntity {
     @Lob
     public String jwk;
 
+    /**
+     * Implementation-specific private key serialized to bytes.
+     */
     @Lob
     public byte[] privateKey;
 
+    /**
+     * Implementation-specific public key serialized to bytes.
+     */
     @Lob
     public byte[] publicKey;
 
@@ -63,5 +74,11 @@ public class StoredKeyPair extends PanacheEntity {
 
     public static Optional<StoredKeyPair> getKeyPairByKid(final String kid) {
         return find("kid", kid).firstResultOptional();
+    }
+
+    public static List<StoredKeyPair> getExpiredButActiveKeyPairs() {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("now", new Date());
+        return find("expires < :now and active = true", params).list();
     }
 }
