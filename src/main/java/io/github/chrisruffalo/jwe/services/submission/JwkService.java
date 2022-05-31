@@ -12,11 +12,16 @@ import javax.inject.Inject;
 import javax.transaction.Transactional;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Optional;
 
+/**
+ * Return the public keys available for encrypting a JWT intended to be
+ * used by this service.
+ */
 @Path("/submission/jwks")
 public class JwkService {
 
@@ -27,7 +32,7 @@ public class JwkService {
     @Transactional
     @Path("{consumer}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPublicKeys(final String consumer) {
+    public Response getPublicKeys(@PathParam("consumer") final String consumer) {
         final JsonWebKeySet set = new JsonWebKeySet();
         Consumer.findByName(consumer).ifPresent(c -> {
             Optional<StoredKeyPair> active = c.getFirstActiveKeyPair();

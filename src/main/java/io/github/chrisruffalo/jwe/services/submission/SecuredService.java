@@ -9,6 +9,10 @@ import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+/**
+ * Simulated secure endpoints that consume the encrypted/signed JWTs and use them for
+ * RBAC.
+ */
 @Path("/submission")
 public class SecuredService {
 

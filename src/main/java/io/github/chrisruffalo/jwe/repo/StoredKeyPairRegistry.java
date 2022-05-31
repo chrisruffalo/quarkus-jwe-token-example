@@ -18,6 +18,10 @@ import java.util.Calendar;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * This project uses the active record pattern but this class encapsulates key generation logic and has convenience
+ * methods to keep dependencies from outside the data domain away from the active records.
+ */
 @ApplicationScoped
 public class StoredKeyPairRegistry {
 
@@ -57,6 +61,10 @@ public class StoredKeyPairRegistry {
             return Optional.empty();
         }
         return fromEncoded(storedKeyPair.publicKey, storedKeyPair.privateKey);
+    }
+
+    public Optional<KeyPair> resolveKeyPair(final String kid) {
+        return StoredKeyPair.getKeyPairByKid(kid).flatMap(this::fromStoredKeyPair);
     }
 
     /**

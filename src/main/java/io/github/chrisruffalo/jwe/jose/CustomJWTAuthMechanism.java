@@ -10,6 +10,7 @@ import io.quarkus.smallrye.jwt.runtime.auth.JsonWebTokenCredential;
 import io.smallrye.jwt.auth.AbstractBearerTokenExtractor;
 import io.smallrye.jwt.auth.principal.JWTAuthContextInfo;
 import io.smallrye.mutiny.Uni;
+import io.smallrye.mutiny.infrastructure.Infrastructure;
 import io.smallrye.mutiny.unchecked.Unchecked;
 import io.vertx.core.http.Cookie;
 import io.vertx.core.http.HttpHeaders;
@@ -26,6 +27,11 @@ import javax.inject.Inject;
 import java.util.Optional;
 import java.util.Set;
 
+/**
+ * This was implemented instead of creating an implementation of {@link io.smallrye.jwt.auth.principal.JWTCallerPrincipalFactory}
+ * because that class could not be made to block for the results from the key resolver. This class, returning a Uni<> seemed like
+ * a better choice.
+ */
 @ApplicationScoped
 @Alternative
 @Priority(1)
@@ -36,6 +42,7 @@ public class CustomJWTAuthMechanism extends JWTAuthMechanism {
 
     @Inject
     KeyResolver keyResolver;
+
     @Inject
     JWTAuthContextInfo authContextInfo;
 
@@ -46,6 +53,10 @@ public class CustomJWTAuthMechanism extends JWTAuthMechanism {
         if (jwtToken != null) {
             return Uni.createFrom().item(jwtToken)
                 .onItem().transform(Unchecked.function(token -> {
+                    // this is the actual consumer that creates the JWT from the nested JSE inside
+                    // the JWE. This allows it to be done all in one pass. I had another implementation
+                    // where it was done in phases but the reactive logic of it was a bit much and I
+                    // haven't learned how to fan out and merge back in a way that makes sense yet.
                     final JwtConsumer consumer = new JwtConsumerBuilder()
                         .setAllowedClockSkewInSeconds(5)
                         .setRequireExpirationTime()
@@ -66,6 +77,10 @@ public class CustomJWTAuthMechanism extends JWTAuthMechanism {
         return Uni.createFrom().optional(Optional.empty());
     }
 
+    /**
+     * This is copied from {@link JWTAuthMechanism} because that is established code already being used for this
+     * purpose but it is not accessible to child classes.
+     */
     private static class VertxBearerTokenExtractor extends AbstractBearerTokenExtractor {
         private final RoutingContext httpExchange;
 

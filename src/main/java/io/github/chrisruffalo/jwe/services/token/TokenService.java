@@ -26,6 +26,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Calendar;
 
+/**
+ * This creates a token for a given subject (machine/service/human) to interact with a consumer (like
+ * the submission service). The relevant keys are created and stored for reuse (until being revoked).
+ */
 @Path("/token")
 public class TokenService {
 

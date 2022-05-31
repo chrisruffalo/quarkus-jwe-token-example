@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Base class for entities that have keys attached to them.
+ */
 @MappedSuperclass
 public abstract class KeyPairEntity extends PanacheEntity {
 

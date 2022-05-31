@@ -8,6 +8,10 @@ import javax.persistence.Lob;
 import java.util.Date;
 import java.util.Optional;
 
+/**
+ * Stores a keypair in a way that it can be used by the application without
+ * much transforming (usually just loading the binary encoding).
+ */
 @Entity
 public class StoredKeyPair extends PanacheEntity {
 
@@ -18,8 +22,8 @@ public class StoredKeyPair extends PanacheEntity {
 
     /**
      * If the key is active or not. Only an _active_ key should
-     * be used for encryption. An inactive key is in the process of being
-     * rotated out.
+     * be used for encryption. An inactive key is probably in the
+     * process of being rotated out.
      */
     public boolean active;
 
