@@ -9,6 +9,11 @@ public abstract class TokenRequestTest {
     public static final String DEFAULT_CONSUMER = "submission";
     public static final String DEFAULT_SUBJECT = "test-subject";
 
+
+    public String getToken() {
+        return this.getToken(DEFAULT_CONSUMER, DEFAULT_SUBJECT, null);
+    }
+
     public String getToken(final KeyType keyType) {
         return this.getToken(DEFAULT_CONSUMER, DEFAULT_SUBJECT, keyType);
     }

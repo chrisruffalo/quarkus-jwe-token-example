@@ -1,5 +1,8 @@
 package io.github.chrisruffalo.jwe.exception;
 
+/**
+ * Simple wrapper for an exception when creating a keypair from a stored key
+ */
 public class StoredKeyToKeyPairException extends Exception {
 
     public StoredKeyToKeyPairException() {

@@ -1,4 +1,4 @@
-package io.github.chrisruffalo.jwe.services.token;
+package io.github.chrisruffalo.jwe.services.issuer;
 
 import io.github.chrisruffalo.jwe.model.Subject;
 import io.github.chrisruffalo.jwe.services.EntityJwkService;

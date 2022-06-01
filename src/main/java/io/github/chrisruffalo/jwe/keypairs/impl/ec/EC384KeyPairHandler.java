@@ -1,4 +1,4 @@
-package io.github.chrisruffalo.jwe.keypairs;
+package io.github.chrisruffalo.jwe.keypairs.impl.ec;
 
 import org.jose4j.jws.AlgorithmIdentifiers;
 

@@ -1,13 +1,13 @@
-package io.github.chrisruffalo.jwe.keypairs;
+package io.github.chrisruffalo.jwe.keypairs.impl.ec;
 
 import org.jose4j.jws.AlgorithmIdentifiers;
 
 import javax.enterprise.context.ApplicationScoped;
 
 @ApplicationScoped
-public class EC521KeyPairHandler extends ECKeyPairHandler {
+public class EC256KeyPairHandler extends ECKeyPairHandler {
 
-    public static final String CURVE = "secp521r1";
+    public static final String CURVE = "secp256r1";
 
     @Override
     protected String getCurve() {
@@ -16,7 +16,7 @@ public class EC521KeyPairHandler extends ECKeyPairHandler {
 
     @Override
     protected String getSignatureAlgorithmHeaderValue() {
-        return AlgorithmIdentifiers.ECDSA_USING_P521_CURVE_AND_SHA512;
+        return AlgorithmIdentifiers.ECDSA_USING_P256_CURVE_AND_SHA256;
     }
     
 }

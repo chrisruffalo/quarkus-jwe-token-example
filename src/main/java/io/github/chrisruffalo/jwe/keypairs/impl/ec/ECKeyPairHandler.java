@@ -1,5 +1,6 @@
-package io.github.chrisruffalo.jwe.keypairs;
+package io.github.chrisruffalo.jwe.keypairs.impl.ec;
 
+import io.github.chrisruffalo.jwe.keypairs.AbstractKeyPairHandler;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
 import org.jose4j.jwk.EllipticCurveJsonWebKey;
 import org.jose4j.jwk.JsonWebKey;

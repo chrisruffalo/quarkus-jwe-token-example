@@ -8,6 +8,9 @@ import org.junit.jupiter.api.Test;
 
 import javax.inject.Inject;
 
+/**
+ * Tests the basic operation of the registry.
+ */
 @QuarkusTest
 public class StoredKeyPairRegistryTest {
 
@@ -23,7 +26,7 @@ public class StoredKeyPairRegistryTest {
 
     @Test
     public void createECKey() {
-        final StoredKeyPair storedKeyPair = registry.createNewKeyPair(KeyType.RSA);
+        final StoredKeyPair storedKeyPair = registry.createNewKeyPair(KeyType.EC);
         Assertions.assertNotNull(storedKeyPair);
         Assertions.assertNotNull(storedKeyPair.originalPair);
     }

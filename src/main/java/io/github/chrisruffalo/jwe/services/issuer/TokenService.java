@@ -1,4 +1,4 @@
-package io.github.chrisruffalo.jwe.services.token;
+package io.github.chrisruffalo.jwe.services.issuer;
 
 import io.github.chrisruffalo.jwe.exception.StoredKeyToKeyPairException;
 import io.github.chrisruffalo.jwe.keypairs.KeyPairHandler;
@@ -112,7 +112,9 @@ public class TokenService {
             final String signedPayload = toSign.getCompactSerialization();
 
             // when it comes to the consuming public key we can choose an already active key. this allows the consumer
-            // to rotate keys while still being able to support decryption on its side.
+            // to rotate keys while still being able to support decryption on its side. when implementing this in a more
+            // production-ready case the JWKS for the consuming service should be retrieved and then used instead of
+            // using a shared database for both services.
             final StoredKeyPair consumerPair = consumer.getFirstActiveKeyPairOfType(type).orElseGet(() -> {
                 StoredKeyPair pair = keyPairRegistry.createNewKeyPair(type);
                 pair.active = true;

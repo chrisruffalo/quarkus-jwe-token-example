@@ -9,6 +9,10 @@ import org.jose4j.jws.JsonWebSignature;
 import java.security.KeyPair;
 import java.util.Optional;
 
+/**
+ * An interface for doing all the necessary key creation and handling for a particular
+ * key type (like: RSA, RSA2048, EC384, etc).
+ */
 public interface KeyPairHandler {
 
     /**

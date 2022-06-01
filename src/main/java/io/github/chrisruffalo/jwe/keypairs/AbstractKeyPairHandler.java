@@ -14,10 +14,14 @@ import java.security.spec.InvalidKeySpecException;
 import java.security.spec.KeySpec;
 import java.util.Optional;
 
+/**
+ * Base implementation of a key handler that allows for sharing most of the logic
+ * and key setup.
+ */
 public abstract class AbstractKeyPairHandler implements KeyPairHandler {
 
     @Inject
-    Logger logger;
+    protected Logger logger;
 
     private KeyPairGenerator generator;
 
@@ -98,7 +102,7 @@ public abstract class AbstractKeyPairHandler implements KeyPairHandler {
             signature.setKey(storedKeyPair.originalPair.getPrivate());
         } else {
             signature.setKey(this.from(storedKeyPair).orElseThrow(StoredKeyToKeyPairException::new).getPrivate());   // signed with the private key from the producer to ensure
-                                                                                                                       // that we can verify that it came from only the issuer
+                                                                                                                     // that we can verify that it came from only the issuer
         }
         signature.setAlgorithmHeaderValue(this.getSignatureAlgorithmHeaderValue());
     }

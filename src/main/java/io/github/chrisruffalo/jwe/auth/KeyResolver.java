@@ -1,4 +1,4 @@
-package io.github.chrisruffalo.jwe.jose;
+package io.github.chrisruffalo.jwe.auth;
 
 import io.github.chrisruffalo.jwe.repo.StoredKeyPairRegistry;
 import org.jose4j.jwe.JsonWebEncryption;
@@ -17,7 +17,9 @@ import java.security.Key;
 import java.util.List;
 
 /**
- * Allows JWE/JWS keys to be resolved, by id, from the database
+ * Allows JWE/JWS keys to be resolved, by id, from the database. In a real application
+ * only the local private key (decryption key) should be resolved this way. The issuer
+ * public key (for verification) should be resolved from the JWKS url of the issuer.
  */
 @ApplicationScoped
 public class KeyResolver implements DecryptionKeyResolver, VerificationKeyResolver {
@@ -49,11 +51,11 @@ public class KeyResolver implements DecryptionKeyResolver, VerificationKeyResolv
 
     @Override
     public Key resolveKey(JsonWebEncryption jwe, List<JsonWebStructure> nestingContext) throws UnresolvableKeyException {
-        return storedKeyPairRegistry.resolveKeyPair(jwe.getKeyIdHeaderValue()).orElseThrow(() -> new UnresolvableKeyException("Cannot resolve private key")).getPrivate();
+        return storedKeyPairRegistry.resolveKeyPair(jwe.getKeyIdHeaderValue()).orElseThrow(() -> new UnresolvableKeyException("Cannot resolve private/decryption key")).getPrivate();
     }
 
     @Override
     public Key resolveKey(JsonWebSignature jws, List<JsonWebStructure> nestingContext) throws UnresolvableKeyException {
-        return storedKeyPairRegistry.resolveKeyPair(jws.getKeyIdHeaderValue()).orElseThrow(() -> new UnresolvableKeyException("Cannot resolve public key")).getPublic();
+        return storedKeyPairRegistry.resolveKeyPair(jws.getKeyIdHeaderValue()).orElseThrow(() -> new UnresolvableKeyException("Cannot resolve public/verification key")).getPublic();
     }
 }

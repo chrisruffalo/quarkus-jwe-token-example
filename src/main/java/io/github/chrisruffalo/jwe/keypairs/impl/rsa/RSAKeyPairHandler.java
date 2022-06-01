@@ -1,20 +1,23 @@
-package io.github.chrisruffalo.jwe.keypairs;
+package io.github.chrisruffalo.jwe.keypairs.impl.rsa;
 
+import io.github.chrisruffalo.jwe.keypairs.AbstractKeyPairHandler;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
 import org.jose4j.jws.AlgorithmIdentifiers;
 
-import javax.enterprise.context.ApplicationScoped;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.KeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Optional;
 
-@ApplicationScoped
-public class RSAKeyPairHandler extends AbstractKeyPairHandler {
+public abstract class RSAKeyPairHandler extends AbstractKeyPairHandler {
+
+    protected abstract int getKeySize();
 
     @Override
     public String getInstanceName() {
@@ -39,6 +42,12 @@ public class RSAKeyPairHandler extends AbstractKeyPairHandler {
     @Override
     protected KeySpec privateKeySpecFromBytes(byte[] bytes) {
         return new PKCS8EncodedKeySpec(bytes);
+    }
+
+    @Override
+    protected void customizeGenerator(KeyPairGenerator generator) throws InvalidAlgorithmParameterException {
+        super.customizeGenerator(generator);
+        generator.initialize(this.getKeySize());
     }
 
     @Override

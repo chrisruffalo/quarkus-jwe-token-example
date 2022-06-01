@@ -34,13 +34,23 @@ public class SubmissionServiceTest extends TokenRequestTest {
     }
 
     @Test
-    public void roundTripRSA() {
+    public void roundTripDefault() {
         this.roundTrip(null);
     }
 
     @Test
-    public void roundTripExplicitRSA() {
+    public void roundTripRSA() {
         this.roundTrip(KeyType.RSA);
+    }
+
+    @Test
+    public void roundTripRSA2048() {
+        this.roundTrip(KeyType.RSA2048);
+    }
+
+    @Test
+    public void roundTripRSA4096() {
+        this.roundTrip(KeyType.RSA4096);
     }
 
     @Test
@@ -57,6 +67,21 @@ public class SubmissionServiceTest extends TokenRequestTest {
     @Test
     public void roundTripEC() {
         this.roundTrip(KeyType.EC);
+    }
+
+    @Test
+    public void roundTripEC256() {
+        this.roundTrip(KeyType.EC256);
+    }
+
+    @Test
+    public void roundTripEC384() {
+        this.roundTrip(KeyType.EC384);
+    }
+
+    @Test
+    public void roundTripEC521() {
+        this.roundTrip(KeyType.EC521);
     }
 
 }
