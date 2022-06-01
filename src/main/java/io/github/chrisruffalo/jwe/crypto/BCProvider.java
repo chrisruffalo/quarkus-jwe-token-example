@@ -4,7 +4,6 @@ import io.quarkus.runtime.Startup;
 import org.bouncycastle.jcajce.provider.BouncyCastleFipsProvider;
 
 import javax.annotation.PostConstruct;
-import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Singleton;
 import java.security.Provider;
 import java.security.Security;

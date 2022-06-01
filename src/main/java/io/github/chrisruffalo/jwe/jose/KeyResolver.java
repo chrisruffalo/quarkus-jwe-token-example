@@ -35,6 +35,8 @@ public class KeyResolver implements DecryptionKeyResolver, VerificationKeyResolv
                 .setRequireSubject()
                 .setRequireJwtId()
                 .setRequireIssuedAt()
+                // in a real application this would set the audience
+                // to be the consuming application.
                 .setSkipDefaultAudienceValidation()
                 .setDecryptionKeyResolver(this)
                 .setVerificationKeyResolver(this)

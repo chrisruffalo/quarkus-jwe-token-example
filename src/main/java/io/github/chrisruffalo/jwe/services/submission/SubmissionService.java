@@ -14,7 +14,7 @@ import javax.ws.rs.core.Response;
  * RBAC.
  */
 @Path("/submission")
-public class SecuredService {
+public class SubmissionService {
 
     @Inject
     @Claim(standard = Claims.sub)

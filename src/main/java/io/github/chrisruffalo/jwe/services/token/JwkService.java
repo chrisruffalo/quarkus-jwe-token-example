@@ -1,13 +1,10 @@
 package io.github.chrisruffalo.jwe.services.token;
 
-import io.github.chrisruffalo.jwe.model.StoredKeyPair;
 import io.github.chrisruffalo.jwe.model.Subject;
 import io.github.chrisruffalo.jwe.services.EntityJwkService;
 import org.jboss.logging.Logger;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKeySet;
-import org.jose4j.jwk.PublicJsonWebKey;
-import org.jose4j.lang.JoseException;
 
 import javax.inject.Inject;
 import javax.transaction.Transactional;
@@ -17,7 +14,6 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.util.List;
 
 /**
  * An endpoint that provides consumers with the ability to verify the signature of a subject
