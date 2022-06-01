@@ -23,8 +23,8 @@ public abstract class KeyPairEntity extends PanacheEntity {
     @OneToMany(fetch = FetchType.LAZY)
     public List<StoredKeyPair> pairs = new ArrayList<>();
 
-    public Optional<StoredKeyPair> getFirstActiveKeyPair() {
-        return pairs.stream().filter((pair) -> pair.active).findFirst();
+    public Optional<StoredKeyPair> getFirstActiveKeyPairOfType(final KeyType type) {
+        return pairs.stream().filter((pair) -> pair.active).filter((pair) -> pair.keyType != null && pair.keyType.equals(type)).findFirst();
     }
 
 }

@@ -12,7 +12,13 @@ import java.util.Map;
 public class KeyPairHandlerFactory {
 
     @Inject
-    ECKeyPairHandler ecKeyPairHandler;
+    EC256KeyPairHandler ec256KeyPairHandler;
+
+    @Inject
+    EC384KeyPairHandler ec384KeyPairHandler;
+
+    @Inject
+    EC521KeyPairHandler ec521KeyPairHandler;
 
     @Inject
     RSAKeyPairHandler rsaKeyPairHandler;
@@ -22,7 +28,10 @@ public class KeyPairHandlerFactory {
     @PostConstruct
     public void init() {
         handlers.put(KeyType.RSA, rsaKeyPairHandler);
-        handlers.put(KeyType.EC, ecKeyPairHandler);
+        handlers.put(KeyType.EC, ec256KeyPairHandler); //256 is the default EC handler
+        handlers.put(KeyType.EC256, ec256KeyPairHandler);
+        handlers.put(KeyType.EC384, ec384KeyPairHandler);
+        handlers.put(KeyType.EC512, ec521KeyPairHandler);
     }
 
     public KeyPairHandler get(final KeyType type) {

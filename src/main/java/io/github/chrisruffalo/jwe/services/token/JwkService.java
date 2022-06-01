@@ -2,6 +2,7 @@ package io.github.chrisruffalo.jwe.services.token;
 
 import io.github.chrisruffalo.jwe.model.StoredKeyPair;
 import io.github.chrisruffalo.jwe.model.Subject;
+import io.github.chrisruffalo.jwe.services.EntityJwkService;
 import org.jboss.logging.Logger;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKeySet;
@@ -25,7 +26,7 @@ import java.util.List;
  * provided/available/listed then the key is no longer active.
  */
 @Path("/issuer/jwks")
-public class JwkService {
+public class JwkService extends EntityJwkService {
 
     @Inject
     Logger logger;
@@ -35,19 +36,8 @@ public class JwkService {
     @Path("{subject}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getPublicKeys(@PathParam("subject") final String subjectName) {
-        final JsonWebKeySet set = new JsonWebKeySet();
         final Subject subject = Subject.findByName(subjectName).orElse(new Subject());
-        final List<StoredKeyPair> pairs = subject.pairs;
-        for(final StoredKeyPair skp : pairs) {
-            if (!skp.isActive()) {
-                continue;
-            }
-            try {
-                set.addJsonWebKey(PublicJsonWebKey.Factory.newPublicJwk(skp.jwk));
-            } catch (JoseException e) {
-                throw new RuntimeException(e);
-            }
-        }
+        final JsonWebKeySet set = this.getJwks(subject);
         return Response.ok(set.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY)).build();
     }
 }

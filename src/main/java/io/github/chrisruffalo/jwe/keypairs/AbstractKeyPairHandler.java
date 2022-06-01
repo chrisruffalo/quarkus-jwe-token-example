@@ -23,6 +23,10 @@ public abstract class AbstractKeyPairHandler implements KeyPairHandler {
 
     private KeyFactory factory;
 
+    protected String getProviderName() {
+        return "BCFIPS";
+    }
+
     protected abstract String getInstanceName();
 
     protected abstract KeySpec publicKeySpecFromBytes(final byte[] bytes);
@@ -33,20 +37,30 @@ public abstract class AbstractKeyPairHandler implements KeyPairHandler {
 
     protected abstract String getEncryptionAlgorithmHeaderValue();
 
+    protected Logger logger() {
+        return this.logger;
+    }
+
     protected String getEncryptionMethodHeaderParameter() {
         return ContentEncryptionAlgorithmIdentifiers.AES_256_CBC_HMAC_SHA_512;
+    }
+
+    protected void customizeGenerator(final KeyPairGenerator generator) throws InvalidAlgorithmParameterException {
+        // no-op by default
     }
 
     @PostConstruct
     public void init() {
         try {
-            generator = KeyPairGenerator.getInstance(this.getInstanceName());
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-        try {
-            factory = KeyFactory.getInstance(this.getInstanceName());
-        } catch (NoSuchAlgorithmException e) {
+            final String providerName = this.getProviderName();
+
+            // create a new generator from the default provider
+            generator = KeyPairGenerator.getInstance(this.getInstanceName(), providerName);
+            this.customizeGenerator(generator);
+
+            // create a new factory from the default provider
+            factory = KeyFactory.getInstance(this.getInstanceName(), providerName);
+        } catch (NoSuchAlgorithmException | NoSuchProviderException | InvalidAlgorithmParameterException e) {
             throw new RuntimeException(e);
         }
     }

@@ -1,6 +1,5 @@
 package io.github.chrisruffalo.jwe.keypairs;
 
-import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.RsaJsonWebKey;
@@ -47,7 +46,7 @@ public class RSAKeyPairHandler extends AbstractKeyPairHandler {
         try {
             return Optional.of(new RsaJsonWebKey((RSAPublicKey) pair.getPublic()));
         } catch (Exception ex) {
-            // no-op
+            logger.error("Could not create web key from pair", ex);
         }
         return Optional.empty();
     }

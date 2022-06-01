@@ -9,10 +9,7 @@ import io.github.chrisruffalo.jwe.model.StoredKeyPair;
 import io.github.chrisruffalo.jwe.model.Subject;
 import io.github.chrisruffalo.jwe.repo.StoredKeyPairRegistry;
 import org.jboss.logging.Logger;
-import org.jose4j.jwe.ContentEncryptionAlgorithmIdentifiers;
 import org.jose4j.jwe.JsonWebEncryption;
-import org.jose4j.jwe.KeyManagementAlgorithmIdentifiers;
-import org.jose4j.jws.AlgorithmIdentifiers;
 import org.jose4j.jws.JsonWebSignature;
 import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.MalformedClaimException;
@@ -116,7 +113,7 @@ public class TokenService {
 
             // when it comes to the consuming public key we can choose an already active key. this allows the consumer
             // to rotate keys while still being able to support decryption on its side.
-            final StoredKeyPair consumerPair = consumer.getFirstActiveKeyPair().orElseGet(() -> {
+            final StoredKeyPair consumerPair = consumer.getFirstActiveKeyPairOfType(type).orElseGet(() -> {
                 StoredKeyPair pair = keyPairRegistry.createNewKeyPair(type);
                 pair.active = true;
                 consumer.pairs.add(pair);

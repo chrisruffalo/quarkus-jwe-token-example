@@ -8,6 +8,7 @@ import org.jose4j.jwk.JsonWebKey;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 import java.security.KeyPair;
 import java.util.Optional;
 import java.util.UUID;
@@ -29,6 +30,7 @@ public class StoredKeyPairRegistry {
         return handlerFactory.get(storedKeyPair.keyType).from(storedKeyPair.publicKey, storedKeyPair.privateKey);
     }
 
+    @Transactional
     public Optional<KeyPair> resolveKeyPair(final String kid) {
         return StoredKeyPair.getKeyPairByKid(kid).filter(StoredKeyPair::isActive).flatMap(this::fromStoredKeyPair);
     }
@@ -52,6 +54,7 @@ public class StoredKeyPairRegistry {
      * @param type the type of key to create
      * @return newly persisted instance of {@link StoredKeyPair}
      */
+    @Transactional
     public StoredKeyPair createNewKeyPair(KeyType type) {
         // get the handler
         final KeyPairHandler handler = handlerFactory.get(type);

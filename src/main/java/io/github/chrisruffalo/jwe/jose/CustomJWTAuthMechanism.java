@@ -19,6 +19,7 @@ import org.jose4j.jwt.JwtClaims;
 import org.jose4j.jwt.consumer.JwtConsumer;
 import org.jose4j.jwt.consumer.JwtConsumerBuilder;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Priority;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.inject.Alternative;
@@ -37,13 +38,10 @@ import java.util.Set;
 public class CustomJWTAuthMechanism extends JWTAuthMechanism {
 
     @Inject
-    Logger logger;
-
-    @Inject
-    KeyResolver keyResolver;
-
-    @Inject
     JWTAuthContextInfo authContextInfo;
+
+    @Inject
+    KeyResolver resolver;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
@@ -56,17 +54,7 @@ public class CustomJWTAuthMechanism extends JWTAuthMechanism {
                     // the JWE. This allows it to be done all in one pass. I had another implementation
                     // where it was done in phases but the reactive logic of it was a bit much and I
                     // haven't learned how to fan out and merge back in a way that makes sense yet.
-                    final JwtConsumer consumer = new JwtConsumerBuilder()
-                        .setAllowedClockSkewInSeconds(5)
-                        .setRequireExpirationTime()
-                        .setRequireSubject()
-                        .setRequireJwtId()
-                        .setRequireIssuedAt()
-                        .setDecryptionKeyResolver(keyResolver)
-                        .setVerificationKeyResolver(keyResolver)
-                        .build();
-
-                    return consumer.processToClaims(token);
+                    return resolver.getConsumer().processToClaims(token);
                 }))
                 .onFailure(failure -> false)
                 .recoverWithItem(new JwtClaims())

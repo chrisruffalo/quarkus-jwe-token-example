@@ -3,7 +3,10 @@ package io.github.chrisruffalo.jwe.model;
 public enum KeyType {
 
     RSA,
-    EC
+    EC,
+    EC256,
+    EC384,
+    EC512
     ;
 
     /**

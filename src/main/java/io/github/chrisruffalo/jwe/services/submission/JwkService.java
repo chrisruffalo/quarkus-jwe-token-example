@@ -2,7 +2,9 @@ package io.github.chrisruffalo.jwe.services.submission;
 
 import io.github.chrisruffalo.jwe.model.Consumer;
 import io.github.chrisruffalo.jwe.model.StoredKeyPair;
+import io.github.chrisruffalo.jwe.model.Subject;
 import io.github.chrisruffalo.jwe.repo.StoredKeyPairRegistry;
+import io.github.chrisruffalo.jwe.services.EntityJwkService;
 import org.jose4j.jwk.JsonWebKey;
 import org.jose4j.jwk.JsonWebKeySet;
 import org.jose4j.jwk.PublicJsonWebKey;
@@ -16,6 +18,7 @@ import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -23,7 +26,7 @@ import java.util.Optional;
  * used by this service.
  */
 @Path("/submission/jwks")
-public class JwkService {
+public class JwkService extends EntityJwkService {
 
     @Inject
     StoredKeyPairRegistry storedKeyPairRegistry;
@@ -32,18 +35,9 @@ public class JwkService {
     @Transactional
     @Path("{consumer}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getPublicKeys(@PathParam("consumer") final String consumer) {
-        final JsonWebKeySet set = new JsonWebKeySet();
-        Consumer.findByName(consumer).ifPresent(c -> {
-            Optional<StoredKeyPair> active = c.getFirstActiveKeyPair();
-            if (active.isPresent()) {
-                try {
-                    set.addJsonWebKey(PublicJsonWebKey.Factory.newPublicJwk(active.get().jwk));
-                } catch (JoseException e) {
-                    // log?
-                }
-            }
-        });
+    public Response getPublicKeys(@PathParam("consumer") final String consumerName) {
+        final Consumer consumer = Consumer.findByName(consumerName).orElse(new Consumer());
+        final JsonWebKeySet set = this.getJwks(consumer);
         return Response.ok(set.toJson(JsonWebKey.OutputControlLevel.PUBLIC_ONLY)).build();
     }
 
