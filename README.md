@@ -30,7 +30,6 @@ to make a JWS and then it can get the issuer public key to verify the issuer.
 - Service secured by JWT claim groups
   - See [SubmissionService](src/main/java/io/github/chrisruffalo/jwe/services/submission/SubmissionService.java) to see the annotations and claim usage
 - Customization of Quarkus JWT Parsing
-  - See [CustomJWTAuthMechanism](src/main/java/io/github/chrisruffalo/jwe/auth/CustomJWTAuthMechanism.java) for how the JWT parsing was pushed to a worker thread
   - See [CustomJWTCallerPrincipalFactory](src/main/java/io/github/chrisruffalo/jwe/auth/CustomJWTCallerPrincipalFactory.java) for how the JWT parsing was customized to use a custom JWT consumer (that can resolve keys at runtime)
 - BCFIPS Integration
   - See [BCProvider](src/main/java/io/github/chrisruffalo/jwe/crypto/BCProvider.java) for creating a BCFIPS instance with low entropy requirements
